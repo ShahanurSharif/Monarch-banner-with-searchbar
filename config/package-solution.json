@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "monarch-banner-searchbar-client-side-solution",
+    "id": "27ae3497-8659-408e-bf5c-152001fea005",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.21.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "monarch-banner-searchbar description"
+      },
+      "longDescription": {
+        "default": "monarch-banner-searchbar description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "monarch-banner-searchbar Feature",
+        "description": "The feature that activates elements of the monarch-banner-searchbar solution.",
+        "id": "66dbe226-c19c-41ad-a305-ad45b23e1aea",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/monarch-banner-searchbar.sppkg"
+  }
+}

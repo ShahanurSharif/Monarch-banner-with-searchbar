@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "monarch-banner-search-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/monarchBannerSearch/MonarchBannerSearchWebPart.js",
+          "manifest": "./src/webparts/monarchBannerSearch/MonarchBannerSearchWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "MonarchBannerSearchWebPartStrings": "lib/webparts/monarchBannerSearch/loc/{locale}.js"
+  }
+}

@@ -1,0 +1,420 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.monarchBannerSearch {
+  width: 100%;
+  overflow: hidden;
+  
+  // Banner Section
+  .bannerSection {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    
+    // Ensure text is readable over gradient
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    
+    .bannerContent {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+      width: 100%;
+      
+      .bannerHeading {
+        margin-bottom: 2rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        
+        @media (max-width: 768px) {
+          font-size: 2rem;
+          margin-bottom: 1.5rem;
+        }
+      }
+      
+      .searchContainer {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        
+        .searchBox {
+          width: 100%;
+          
+          // Override Fluent UI styles for better appearance
+          :global(.ms-SearchBox) {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            min-height: 48px;
+            
+            &:hover {
+              background: rgba(255, 255, 255, 1);
+              box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+            }
+            
+            &:focus-within {
+              background: rgba(255, 255, 255, 1);
+              box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+            }
+          }
+          
+          :global(.ms-SearchBox-field) {
+            font-size: 16px;
+            padding: 0 20px;
+            color: #323130;
+            
+            &::placeholder {
+              color: #605e5c;
+            }
+          }
+          
+          :global(.ms-SearchBox-iconContainer) {
+            right: 16px;
+            
+            :global(.ms-SearchBox-icon) {
+              color: #8B5CF6;
+              font-size: 18px;
+            }
+          }
+        }
+      }
+    }
+    
+    // Decorative background elements
+    .bannerDecorations {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      z-index: 1;
+      
+      .circle1, .circle2, .circle3 {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        animation: float 6s ease-in-out infinite;
+      }
+      
+      .circle1 {
+        width: 120px;
+        height: 120px;
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+      }
+      
+      .circle2 {
+        width: 200px;
+        height: 200px;
+        top: 60%;
+        right: 15%;
+        animation-delay: 2s;
+      }
+      
+      .circle3 {
+        width: 80px;
+        height: 80px;
+        bottom: 20%;
+        left: 80%;
+        animation-delay: 4s;
+      }
+    }
+  }
+  
+  // Container for content sections
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    
+    @media (max-width: 768px) {
+      padding: 0 1rem;
+    }
+  }
+  
+  // Results Section
+  .resultsSection {
+    padding: 3rem 0;
+    background: #fafafa;
+    min-height: 400px;
+    
+    .folderFilter {
+      margin-bottom: 2rem;
+      
+      .folderPivot {
+        :global(.ms-Pivot-linkContent) {
+          font-weight: 500;
+        }
+        
+        :global(.ms-Pivot-link) {
+          &:hover {
+            background: rgba(139, 92, 246, 0.1);
+          }
+          
+          &[data-is-selected="true"] {
+            color: #8B5CF6;
+          }
+        }
+      }
+    }
+    
+    .loadingContainer {
+      text-align: center;
+      padding: 4rem 0;
+      
+      :global(.ms-Spinner-circle) {
+        border-color: #8B5CF6 transparent transparent transparent;
+      }
+    }
+    
+    .resultsHeader {
+      margin-bottom: 1.5rem;
+      color: #323130;
+      font-weight: 600;
+    }
+    
+    .documentsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .documentCard {
+        border: none;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: white;
+        
+        &:hover {
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+          transform: translateY(-2px);
+        }
+        
+        .documentCardContent {
+          padding: 1rem;
+          
+          .documentMeta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            flex-wrap: wrap;
+            
+            .documentAuthor, .documentDate {
+              color: #605e5c;
+            }
+          }
+          
+          .documentSummary {
+            color: #605e5c;
+            line-height: 1.4;
+            margin: 0.75rem 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+        }
+      }
+    }
+    
+    .noResults {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #605e5c;
+      
+      .noResultsIcon {
+        font-size: 3rem;
+        color: #d1d1d1;
+        margin-bottom: 1rem;
+      }
+      
+      > :global(.ms-Text) {
+        margin-bottom: 0.5rem;
+        
+        &:first-of-type {
+          color: #323130;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+  
+  // Welcome Section (when no search)
+  .welcomeSection {
+    padding: 4rem 0;
+    background: white;
+    
+    .welcomeTitle {
+      text-align: center;
+      margin-bottom: 1rem;
+      color: #323130;
+      font-weight: 600;
+    }
+    
+    .welcomeDescription {
+      text-align: center;
+      color: #605e5c;
+      margin-bottom: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .featuresList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+      
+      .feature {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #e1e5e9;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background: white;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+          transform: translateY(-2px);
+        }
+        
+        .featureIcon {
+          font-size: 2rem;
+          color: #8B5CF6;
+          flex-shrink: 0;
+          margin-top: 0.25rem;
+        }
+        
+        > div {
+          > :global(.ms-Text) {
+            display: block;
+            
+            &:first-child {
+              color: #323130;
+              font-weight: 600;
+              margin-bottom: 0.5rem;
+            }
+            
+            &:last-child {
+              color: #605e5c;
+              line-height: 1.4;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 1024px) {
+  .monarchBannerSearch {
+    .bannerSection {
+      padding: 1.5rem;
+      
+      .bannerContent {
+        .searchContainer {
+          max-width: 500px;
+        }
+      }
+    }
+    
+    .container {
+      padding: 0 1.5rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .monarchBannerSearch {
+    .bannerSection {
+      padding: 1rem;
+      min-height: 250px;
+      
+      .bannerContent {
+        .bannerHeading {
+          font-size: 1.75rem;
+          margin-bottom: 1.5rem;
+        }
+        
+        .searchContainer {
+          .searchBox {
+            :global(.ms-SearchBox) {
+              min-height: 44px;
+            }
+            
+            :global(.ms-SearchBox-field) {
+              font-size: 14px;
+              padding: 0 18px;
+            }
+          }
+        }
+      }
+      
+      .bannerDecorations {
+        .circle1 {
+          width: 80px;
+          height: 80px;
+        }
+        
+        .circle2 {
+          width: 120px;
+          height: 120px;
+        }
+        
+        .circle3 {
+          width: 60px;
+          height: 60px;
+        }
+      }
+    }
+    
+    .welcomeSection {
+      padding: 2rem 0;
+      
+      .featuresList {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        
+        .feature {
+          padding: 1rem;
+        }
+      }
+    }
+  }
+}
