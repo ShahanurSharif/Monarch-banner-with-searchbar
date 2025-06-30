@@ -20,8 +20,6 @@ export interface IMonarchBannerSearchWebPartProps {
   searchboxPrompt: string;
   bannerHeight: number;
   backgroundColor: string;
-  backgroundGradient: string;
-  useGradient: boolean;
   sourceLibraries: string[];
   showFolders: boolean;
 }
@@ -36,19 +34,17 @@ export default class MonarchBannerSearchWebPart extends BaseClientSideWebPart<IM
       MonarchBannerSearch,
       {
         description: this.properties.description,
+        bannerHeading: this.properties.bannerHeading || 'Hello Monarch',
+        searchboxPrompt: this.properties.searchboxPrompt || 'Search for documents...',
+        bannerHeight: this.properties.bannerHeight || 180,
+        backgroundColor: this.properties.backgroundColor || '#8B5CF6',
+        sourceLibraries: this.properties.sourceLibraries || [],
+        showFolders: this.properties.showFolders !== false,
+        context: this.context,
         isDarkTheme: this._isDarkTheme,
         environmentMessage: this._environmentMessage,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        userDisplayName: this.context.pageContext.user.displayName,
-        bannerHeading: this.properties.bannerHeading || 'Welcome, Andrew!',
-        searchboxPrompt: this.properties.searchboxPrompt || 'Search for documents...',
-        bannerHeight: this.properties.bannerHeight || 300,
-        backgroundColor: this.properties.backgroundColor || '#8B5CF6',
-        backgroundGradient: this.properties.backgroundGradient || 'linear-gradient(135deg, #8B5CF6 0%, #F97316 100%)',
-        useGradient: this.properties.useGradient !== false,
-        sourceLibraries: this.properties.sourceLibraries || [],
-        showFolders: this.properties.showFolders !== false,
-        context: this.context
+        userDisplayName: this.context.pageContext.user.displayName
       }
     );
 
@@ -113,6 +109,20 @@ export default class MonarchBannerSearchWebPart extends BaseClientSideWebPart<IM
     return Version.parse('1.0');
   }
 
+  private _validateColor(value: string): string {
+    if (!value) {
+      return ''; // Empty is allowed, will use defaults
+    }
+    
+    // Check for valid hex color format
+    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (!hexRegex.test(value)) {
+      return 'Please enter a valid hex color (e.g., #8B5CF6 or #fff)';
+    }
+    
+    return '';
+  }
+
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
       pages: [
@@ -134,28 +144,21 @@ export default class MonarchBannerSearchWebPart extends BaseClientSideWebPart<IM
                 }),
                 PropertyPaneSlider('bannerHeight', {
                   label: 'Banner Height (px)',
-                  min: 200,
-                  max: 500,
+                  min: 150,
+                  max: 350,
                   step: 10,
                   showValue: true
                 })
               ]
             },
             {
-              groupName: 'Styling',
+              groupName: 'Background Settings',
               groupFields: [
-                PropertyPaneToggle('useGradient', {
-                  label: 'Use Gradient Background',
-                  onText: 'Gradient',
-                  offText: 'Solid Color'
-                }),
                 PropertyPaneTextField('backgroundColor', {
                   label: 'Background Color',
-                  description: 'Hex color code for solid background'
-                }),
-                PropertyPaneTextField('backgroundGradient', {
-                  label: 'Background Gradient',
-                  description: 'CSS gradient for background'
+                  description: 'Enter hex color (e.g., #8B5CF6, #0078D4, #36B37E)',
+                  placeholder: '#8B5CF6',
+                  onGetErrorMessage: this._validateColor.bind(this)
                 })
               ]
             },

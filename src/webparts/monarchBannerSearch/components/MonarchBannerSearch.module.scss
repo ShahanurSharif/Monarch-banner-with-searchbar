@@ -8,18 +8,28 @@
   .bannerSection {
     position: relative;
     width: 100%;
-    min-height: 300px;
+    min-height: 160px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
     color: white;
     text-align: center;
-    padding: 2rem;
+    padding: 1.2rem;
     box-sizing: border-box;
     
     // Ensure text is readable over gradient
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    
+    .bannerOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.1);
+      z-index: 1;
+    }
     
     .bannerContent {
       position: relative;
@@ -27,15 +37,22 @@
       max-width: 800px;
       width: 100%;
       
+      .brandingSection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      
       .bannerHeading {
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         font-weight: 600;
         letter-spacing: -0.02em;
         line-height: 1.2;
         
         @media (max-width: 768px) {
-          font-size: 2rem;
-          margin-bottom: 1.5rem;
+          font-size: 1.8rem;
+          margin-bottom: 1rem;
         }
       }
       
@@ -54,7 +71,7 @@
             border-radius: 50px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
-            min-height: 48px;
+            min-height: 44px;
             
             &:hover {
               background: rgba(255, 255, 255, 1);
@@ -68,8 +85,8 @@
           }
           
           :global(.ms-SearchBox-field) {
-            font-size: 16px;
-            padding: 0 20px;
+            font-size: 15px;
+            padding: 0 18px;
             color: #323130;
             
             &::placeholder {
@@ -78,7 +95,55 @@
           }
           
           :global(.ms-SearchBox-iconContainer) {
-            right: 16px;
+            right: 14px;
+            
+            :global(.ms-SearchBox-icon) {
+              color: #8B5CF6;
+              font-size: 16px;
+            }
+          }
+        }
+      }
+      
+      // Simple Search Area
+      .searchArea {
+        margin: 0 auto;
+        max-width: 600px;
+        
+        .enhancedSearchBox {
+          margin-bottom: 16px;
+          
+          :global(.ms-SearchBox) {
+            background: rgba(255, 255, 255, 1);
+            border-radius: 50px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            min-height: 50px;
+            
+            &:hover {
+              box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
+              transform: translateY(-1px);
+            }
+            
+            &:focus-within {
+              box-shadow: 0 8px 35px rgba(139, 92, 246, 0.3);
+              transform: translateY(-2px);
+            }
+          }
+          
+          :global(.ms-SearchBox-field) {
+            font-size: 16px;
+            padding: 0 24px;
+            font-weight: 400;
+            color: #323130;
+            
+            &::placeholder {
+              color: #a19f9d;
+            }
+          }
+          
+          :global(.ms-SearchBox-iconContainer) {
+            right: 18px;
             
             :global(.ms-SearchBox-icon) {
               color: #8B5CF6;
@@ -86,10 +151,39 @@
             }
           }
         }
+        
+        .quickActions {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        
+        .quickActionBtn {
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: 18px;
+          padding: 6px 14px;
+          font-size: 13px;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+          }
+          
+          :global(.ms-Button-icon) {
+            color: white;
+          }
+        }
       }
+      
+
     }
     
-    // Decorative background elements
+    // Enhanced Decorative elements
     .bannerDecorations {
       position: absolute;
       top: 0;
@@ -99,35 +193,59 @@
       overflow: hidden;
       z-index: 1;
       
-      .circle1, .circle2, .circle3 {
+      .geometricShape1, .geometricShape2, .geometricShape3 {
         position: absolute;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
-        animation: float 6s ease-in-out infinite;
+        background: rgba(255, 255, 255, 0.08);
+        animation: float 8s ease-in-out infinite;
       }
       
-      .circle1 {
-        width: 120px;
-        height: 120px;
-        top: 20%;
-        left: 10%;
+      .geometricShape1 {
+        width: 100px;
+        height: 100px;
+        top: 15%;
+        left: 8%;
         animation-delay: 0s;
       }
       
-      .circle2 {
-        width: 200px;
-        height: 200px;
-        top: 60%;
-        right: 15%;
-        animation-delay: 2s;
+      .geometricShape2 {
+        width: 70px;
+        height: 70px;
+        top: 70%;
+        right: 12%;
+        animation-delay: 3s;
       }
       
-      .circle3 {
+      .geometricShape3 {
+        width: 50px;
+        height: 50px;
+        bottom: 25%;
+        left: 85%;
+        animation-delay: 6s;
+      }
+      
+      .floatingCard1, .floatingCard2 {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        backdrop-filter: blur(3px);
+        animation: floatCard 10s ease-in-out infinite;
+      }
+      
+      .floatingCard1 {
         width: 80px;
-        height: 80px;
-        bottom: 20%;
-        left: 80%;
-        animation-delay: 4s;
+        height: 50px;
+        top: 20%;
+        right: 20%;
+        animation-delay: 1s;
+      }
+      
+      .floatingCard2 {
+        width: 60px;
+        height: 40px;
+        bottom: 30%;
+        left: 15%;
+        animation-delay: 5s;
       }
     }
   }
@@ -149,8 +267,16 @@
     background: #fafafa;
     min-height: 400px;
     
-    .folderFilter {
+    .filterCard {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       margin-bottom: 2rem;
+      overflow: hidden;
+      
+      .filterCardSection {
+        padding: 16px 24px;
+      }
       
       .folderPivot {
         :global(.ms-Pivot-linkContent) {
@@ -170,7 +296,7 @@
     }
     
     .loadingContainer {
-      text-align: center;
+  text-align: center;
       padding: 4rem 0;
       
       :global(.ms-Spinner-circle) {
@@ -179,9 +305,23 @@
     }
     
     .resultsHeader {
-      margin-bottom: 1.5rem;
-      color: #323130;
-      font-weight: 600;
+      margin-bottom: 2rem;
+      padding: 0 8px;
+      
+      .resultsTitle {
+        color: #323130;
+        font-weight: 600;
+      }
+      
+      .exportBtn {
+        background: #8B5CF6;
+        border: none;
+        border-radius: 6px;
+        
+        &:hover {
+          background: #7C3AED;
+        }
+      }
     }
     
     .documentsGrid {
@@ -201,8 +341,8 @@
         overflow: hidden;
         transition: all 0.3s ease;
         background: white;
-        
-        &:hover {
+
+    &:hover {
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
           transform: translateY(-2px);
         }
@@ -235,109 +375,52 @@
       }
     }
     
-    .noResults {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: #605e5c;
+    .noResultsCard {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      margin: 2rem 0;
       
-      .noResultsIcon {
-        font-size: 3rem;
-        color: #d1d1d1;
-        margin-bottom: 1rem;
-      }
-      
-      > :global(.ms-Text) {
-        margin-bottom: 0.5rem;
+      .noResultsCardSection {
+        padding: 3rem 2rem;
+        text-align: center;
         
-        &:first-of-type {
-          color: #323130;
-          font-weight: 600;
+        .noResultsIcon {
+          font-size: 3rem;
+          color: #d1d1d1;
+          margin-bottom: 1rem;
         }
       }
     }
   }
   
-  // Welcome Section (when no search)
-  .welcomeSection {
-    padding: 4rem 0;
-    background: white;
-    
-    .welcomeTitle {
-      text-align: center;
-      margin-bottom: 1rem;
-      color: #323130;
-      font-weight: 600;
-    }
-    
-    .welcomeDescription {
-      text-align: center;
-      color: #605e5c;
-      margin-bottom: 3rem;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    
-    .featuresList {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      max-width: 900px;
-      margin: 0 auto;
-      
-      .feature {
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1.5rem;
-        background: #f8f9fa;
-        border-radius: 12px;
-        border: 1px solid #e1e5e9;
-        transition: all 0.3s ease;
-        
-        &:hover {
-          background: white;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-          transform: translateY(-2px);
-        }
-        
-        .featureIcon {
-          font-size: 2rem;
-          color: #8B5CF6;
-          flex-shrink: 0;
-          margin-top: 0.25rem;
-        }
-        
-        > div {
-          > :global(.ms-Text) {
-            display: block;
-            
-            &:first-child {
-              color: #323130;
-              font-weight: 600;
-              margin-bottom: 0.5rem;
-            }
-            
-            &:last-child {
-              color: #605e5c;
-              line-height: 1.4;
-            }
-          }
-        }
-      }
-    }
+
+}
+
+// Enhanced Animation keyframes
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) scale(1) rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-30px) scale(1.1) rotate(5deg);
+    opacity: 0.8;
   }
 }
 
-// Animation keyframes
-@keyframes float {
+@keyframes floatCard {
   0%, 100% {
-    transform: translateY(0px) scale(1);
-    opacity: 0.7;
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.4;
   }
-  50% {
-    transform: translateY(-20px) scale(1.05);
-    opacity: 0.9;
+  33% {
+    transform: translateY(-20px) translateX(10px) rotate(2deg);
+    opacity: 0.6;
+  }
+  66% {
+    transform: translateY(-10px) translateX(-5px) rotate(-1deg);
+    opacity: 0.5;
   }
 }
 
@@ -345,11 +428,11 @@
 @media (max-width: 1024px) {
   .monarchBannerSearch {
     .bannerSection {
-      padding: 1.5rem;
+      padding: 1.2rem;
       
       .bannerContent {
-        .searchContainer {
-          max-width: 500px;
+        .searchArea {
+          max-width: 550px;
         }
       }
     }
@@ -364,57 +447,59 @@
   .monarchBannerSearch {
     .bannerSection {
       padding: 1rem;
-      min-height: 250px;
+      min-height: 180px;
       
       .bannerContent {
-        .bannerHeading {
-          font-size: 1.75rem;
-          margin-bottom: 1.5rem;
-        }
         
-        .searchContainer {
-          .searchBox {
+        .searchArea {
+          margin: 16px auto;
+          
+          .enhancedSearchBox {
             :global(.ms-SearchBox) {
-              min-height: 44px;
+              min-height: 48px;
             }
             
             :global(.ms-SearchBox-field) {
               font-size: 14px;
-              padding: 0 18px;
+              padding: 0 20px;
             }
+          }
+          
+          .quickActionBtn {
+            padding: 6px 12px;
+            font-size: 12px;
           }
         }
       }
       
       .bannerDecorations {
-        .circle1 {
+        .geometricShape1 {
+          width: 100px;
+          height: 100px;
+        }
+        
+        .geometricShape2 {
+          width: 70px;
+          height: 70px;
+        }
+        
+        .geometricShape3 {
+          width: 50px;
+          height: 50px;
+        }
+        
+        .floatingCard1 {
           width: 80px;
-          height: 80px;
+          height: 50px;
         }
         
-        .circle2 {
-          width: 120px;
-          height: 120px;
-        }
-        
-        .circle3 {
+        .floatingCard2 {
           width: 60px;
-          height: 60px;
+          height: 40px;
         }
       }
     }
     
-    .welcomeSection {
-      padding: 2rem 0;
-      
-      .featuresList {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        
-        .feature {
-          padding: 1rem;
-        }
-      }
-    }
+
   }
 }

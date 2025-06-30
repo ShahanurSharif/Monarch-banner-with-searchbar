@@ -10,8 +10,6 @@ export interface IMonarchBannerSearchProps {
   searchboxPrompt: string;
   bannerHeight: number;
   backgroundColor: string;
-  backgroundGradient: string;
-  useGradient: boolean;
   sourceLibraries: string[];
   showFolders: boolean;
   

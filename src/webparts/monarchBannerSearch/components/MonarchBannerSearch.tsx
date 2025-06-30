@@ -17,7 +17,9 @@ import {
   SpinnerSize,
   MessageBar,
   MessageBarType,
-  Icon
+  Icon,
+  DefaultButton,
+  PrimaryButton
 } from '@fluentui/react';
 
 interface ISearchResult {
@@ -47,7 +49,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
 
   const bannerStyle: React.CSSProperties = {
     height: `${props.bannerHeight}px`,
-    background: props.useGradient ? props.backgroundGradient : props.backgroundColor,
+    backgroundColor: props.backgroundColor,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -157,28 +159,66 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
 
   return (
     <div className={styles.monarchBannerSearch}>
-      {/* Banner Section */}
+      {/* Enhanced Professional Banner Section */}
       <div style={bannerStyle} className={styles.bannerSection}>
+        <div className={styles.bannerOverlay} />
+        
         <div className={styles.bannerContent}>
-          <Text variant="xxLarge" className={styles.bannerHeading}>
-            {props.bannerHeading}
-          </Text>
-          <div className={styles.searchContainer}>
+          {/* Professional Header */}
+          <div className={styles.brandingSection}>
+            <Text variant="mega" className={styles.bannerHeading} styles={{
+              root: {
+                fontSize: '48px',
+                fontWeight: '700',
+                textShadow: '0 4px 8px rgba(0,0,0,0.4)',
+                letterSpacing: '-1px'
+              }
+            }}>
+              {props.bannerHeading}
+            </Text>
+          </div>
+
+          {/* Simple Search Area */}
+          <div className={styles.searchArea}>
             <SearchBox
               placeholder={props.searchboxPrompt}
               onSearch={handleSearch}
               onChange={(event: React.ChangeEvent<HTMLInputElement>, newValue?: string) => handleSearch(newValue)}
-              className={styles.searchBox}
+              className={styles.enhancedSearchBox}
               iconProps={{ iconName: 'Search' }}
             />
+            
+            {/* Quick Action Buttons */}
+            <div className={styles.quickActions}>
+              <DefaultButton 
+                text="Documents" 
+                iconProps={{ iconName: 'TextDocument' }}
+                className={styles.quickActionBtn}
+                onClick={() => handleSearch('document')}
+              />
+              <DefaultButton 
+                text="Templates" 
+                iconProps={{ iconName: 'FileTemplate' }}
+                className={styles.quickActionBtn}
+                onClick={() => handleSearch('template')}
+              />
+              <DefaultButton 
+                text="Forms" 
+                iconProps={{ iconName: 'FormLibrary' }}
+                className={styles.quickActionBtn}
+                onClick={() => handleSearch('form')}
+              />
+            </div>
           </div>
         </div>
         
-        {/* Decorative elements */}
+        {/* Enhanced Decorative elements */}
         <div className={styles.bannerDecorations}>
-          <div className={styles.circle1} />
-          <div className={styles.circle2} />
-          <div className={styles.circle3} />
+          <div className={styles.geometricShape1} />
+          <div className={styles.geometricShape2} />
+          <div className={styles.geometricShape3} />
+          <div className={styles.floatingCard1} />
+          <div className={styles.floatingCard2} />
         </div>
       </div>
 
@@ -189,21 +229,23 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
             
             {/* Folder Filter */}
             {props.showFolders && folders.length > 0 && (
-              <div className={styles.folderFilter}>
-                <Pivot
-                  selectedKey={selectedFolder}
-                  onLinkClick={(item: PivotItem) => setSelectedFolder(item?.props.itemKey || 'all')}
-                  className={styles.folderPivot}
-                >
-                  <PivotItem headerText={`All (${searchResults.length})`} itemKey="all" />
-                  {folders.map(folder => (
-                    <PivotItem 
-                      key={folder.name}
-                      headerText={`${folder.name} (${folder.count})`} 
-                      itemKey={folder.name} 
-                    />
-                  ))}
-                </Pivot>
+              <div className={styles.filterCard}>
+                <div className={styles.filterCardSection}>
+                  <Pivot
+                    selectedKey={selectedFolder}
+                    onLinkClick={(item: PivotItem) => setSelectedFolder(item?.props.itemKey || 'all')}
+                    className={styles.folderPivot}
+                  >
+                    <PivotItem headerText={`All (${searchResults.length})`} itemKey="all" />
+                    {folders.map(folder => (
+                      <PivotItem 
+                        key={folder.name}
+                        headerText={`${folder.name} (${folder.count})`} 
+                        itemKey={folder.name} 
+                      />
+                    ))}
+                  </Pivot>
+                </div>
               </div>
             )}
 
@@ -224,9 +266,11 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
             {/* Search Results */}
             {!isLoading && filteredResults.length > 0 && (
               <div>
-                <Text variant="mediumPlus" className={styles.resultsHeader}>
-                  Found {filteredResults.length} document{filteredResults.length !== 1 ? 's' : ''}
-                </Text>
+                <div className={styles.resultsHeader}>
+                  <Text variant="xLarge" className={styles.resultsTitle}>
+                    Found {filteredResults.length} document{filteredResults.length !== 1 ? 's' : ''}
+                  </Text>
+                </div>
                 
                 <div className={styles.documentsGrid}>
                   {filteredResults.map((result, index) => (
@@ -285,12 +329,21 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
 
             {/* No Results */}
             {!isLoading && searchQuery && filteredResults.length === 0 && (
-              <div className={styles.noResults}>
-                <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
-                <Text variant="large">No documents found</Text>
-                <Text variant="medium">
-                  Try adjusting your search terms or check if the source libraries are configured correctly.
-                </Text>
+              <div className={styles.noResultsCard}>
+                <div className={styles.noResultsCardSection}>
+                  <Stack horizontalAlign="center" tokens={{ childrenGap: 16 }}>
+                    <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
+                    <Text variant="xLarge">No documents found</Text>
+                    <Text variant="medium">
+                      Try adjusting your search terms or check if the source libraries are configured correctly.
+                    </Text>
+                    <PrimaryButton 
+                      text="Browse All Documents" 
+                      iconProps={{ iconName: 'FabricFolder' }}
+                      onClick={() => setSearchQuery('')}
+                    />
+                  </Stack>
+                </div>
               </div>
             )}
 
@@ -298,45 +351,6 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
         </div>
       )}
 
-      {/* Welcome Message when no search */}
-      {!searchQuery && (
-        <div className={styles.welcomeSection}>
-          <div className={styles.container}>
-            <Text variant="xLarge" className={styles.welcomeTitle}>
-              Search for Documents and Templates
-            </Text>
-            <Text variant="medium" className={styles.welcomeDescription}>
-              Use the search bar above to find documents, templates, and resources across your organization.
-            </Text>
-            
-            <div className={styles.featuresList}>
-              <div className={styles.feature}>
-                <Icon iconName="Search" className={styles.featureIcon} />
-                <div>
-                  <Text variant="mediumPlus">Smart Search</Text>
-                  <Text variant="small">Find documents by title, content, or author</Text>
-                </div>
-              </div>
-              
-              <div className={styles.feature}>
-                <Icon iconName="FabricFolder" className={styles.featureIcon} />
-                <div>
-                  <Text variant="mediumPlus">Organized by Folders</Text>
-                  <Text variant="small">Browse results organized by document libraries</Text>
-                </div>
-              </div>
-              
-              <div className={styles.feature}>
-                <Icon iconName="FileTemplate" className={styles.featureIcon} />
-                <div>
-                  <Text variant="mediumPlus">Templates & Forms</Text>
-                  <Text variant="small">Access templates and forms for common tasks</Text>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
