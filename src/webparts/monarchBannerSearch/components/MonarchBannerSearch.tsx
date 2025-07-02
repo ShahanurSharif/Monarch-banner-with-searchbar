@@ -1,25 +1,13 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import styles from './MonarchBannerSearch.module.scss';
 import type { IMonarchBannerSearchProps } from './IMonarchBannerSearchProps';
 import { 
   SearchBox, 
-  DocumentCard, 
-  DocumentCardPreview, 
-  DocumentCardTitle, 
-  DocumentCardLocation, 
-  DocumentCardType,
-  Pivot,
-  PivotItem,
-  Stack,
   Text,
   Spinner,
   SpinnerSize,
-  MessageBar,
-  MessageBarType,
-  Icon,
-  DefaultButton,
-  PrimaryButton
+  Icon
 } from '@fluentui/react';
 
 interface ISearchResult {
@@ -30,23 +18,185 @@ interface ISearchResult {
   modified: string;
   fileType: string;
   path: string;
-  folder?: string;
+  folder: string;
 }
 
-interface IFolder {
-  name: string;
-  url: string;
-  count: number;
+interface ISearchCell {
+  Key: string;
+  Value: string;
+}
+
+interface ISearchRow {
+  Cells: ISearchCell[];
 }
 
 const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<ISearchResult[]>([]);
-  const [folders, setFolders] = useState<IFolder[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string>('all');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const debounceTimeout = useRef<number | undefined>(undefined);
+  const mappedResultsRef = useRef<ISearchResult[]>([]);
 
+  // File icon helper
+  const getFileIcon = (fileType: string): string => {
+    switch (fileType.toLowerCase()) {
+      case 'pdf': return 'PDF';
+      case 'docx': case 'doc': return 'WordDocument';
+      case 'xlsx': case 'xls': return 'ExcelDocument';
+      case 'pptx': case 'ppt': return 'PowerPointDocument';
+      default: return 'Document';
+    }
+  };
+
+  // Handle document click
+  const handleDocumentClick = (url: string): void => {
+    setHighlightedIndex(-1);
+    window.open(url, '_blank');
+  };
+
+  // Search function
+  const searchDocuments = async (query: string): Promise<void> => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsLoading(false);
+      setError('');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+      const webUrl = (props.context as { pageContext?: { web?: { absoluteUrl?: string } } }).pageContext?.web?.absoluteUrl || window.location.origin;
+      const searchUrl = `${webUrl}/_api/search/query?querytext='${encodeURIComponent(query)}*'&selectproperties='Title,Path,Author,LastModifiedTime,FileType,SiteName,SPWebUrl,HitHighlightedSummary'&rowlimit=20`;
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json;odata=verbose',
+          'Content-Type': 'application/json;odata=verbose'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      // Defensive: handle both .Rows and .Rows.results
+      let searchRows: ISearchRow[] = [];
+      if (data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows) {
+        if (Array.isArray(data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows)) {
+          searchRows = data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows;
+        } else if ('results' in data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows && Array.isArray(data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows.results)) {
+          searchRows = data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows.results;
+        }
+      }
+      console.log('Raw searchRows:', searchRows);
+      const mappedResults: ISearchResult[] = searchRows.map((row: ISearchRow, idx: number) => {
+        try {
+          let cells: ISearchCell[] = [];
+          if (row.Cells) {
+            if (Array.isArray(row.Cells)) {
+              cells = row.Cells;
+            } else if ('results' in row.Cells && Array.isArray((row.Cells as { results: ISearchCell[] }).results)) {
+              cells = (row.Cells as { results: ISearchCell[] }).results;
+            }
+          }
+          if (!Array.isArray(cells)) {
+            throw new Error('Row.Cells is missing or not an array/results');
+          }
+          console.log('Cells:', cells.map((cell: ISearchCell) => ({ key: cell.Key, value: cell.Value })));
+          const getCell = (key: string): string => {
+            for (let i = 0; i < cells.length; i++) {
+              if (cells[i].Key === key) {
+                return cells[i].Value;
+              }
+            }
+            return '';
+          };
+          const title =
+            getCell('Title') ||
+            getCell('FileName') ||
+            getCell('Name') ||
+            getCell('FileLeafRef') ||
+            (getCell('Path') ? getCell('Path').split('/').pop() : undefined) ||
+            'Untitled Document';
+          const path = getCell('Path') || '';
+          const author = getCell('Author') || 'Unknown';
+          const modified = getCell('LastModifiedTime') || new Date().toISOString();
+          const fileType = getCell('FileType') || 'unknown';
+          const siteName = getCell('SiteName') || 'SharePoint';
+          const summary = getCell('HitHighlightedSummary') || '';
+          let actualFileType = fileType;
+          if (!actualFileType && path) {
+            const pathParts = path.split('.');
+            if (pathParts.length > 1) {
+              actualFileType = pathParts[pathParts.length - 1].toLowerCase();
+            }
+          }
+          return {
+            title,
+            url: path,
+            summary: summary.replace(/<[^>]*>/g, ''),
+            author,
+            modified: new Date(modified).toISOString().split('T')[0],
+            fileType: actualFileType,
+            path: path.substring(0, path.lastIndexOf('/')) || path,
+            folder: siteName
+          };
+        } catch (err) {
+          console.error('Mapping error at row', idx, err, row);
+          return null;
+        }
+      }).filter((item): item is ISearchResult => !!item);
+      console.log('Mapped results:', mappedResults);
+      mappedResultsRef.current = mappedResults;
+      setSearchResults(mappedResults);
+      setError(''); // Only set error if fetch fails
+      setHighlightedIndex(mappedResults.length > 0 ? 0 : -1);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Failed to search documents. Please try again.');
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Debounced search
+  const debouncedSearch = useCallback((query: string): void => {
+    if (debounceTimeout.current !== undefined) {
+      clearTimeout(debounceTimeout.current);
+    }
+    debounceTimeout.current = window.setTimeout(() => {
+      searchDocuments(query).catch(console.error);
+    }, 300);
+  }, []);
+
+  // Handle input change
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>, newValue?: string): void => {
+    setSearchQuery(newValue || '');
+    debouncedSearch(newValue || '');
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % searchResults.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + searchResults.length) % searchResults.length);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
+        handleDocumentClick(searchResults[highlightedIndex].url);
+      }
+    } else if (event.key === 'Escape') {
+      setHighlightedIndex(-1);
+    }
+  };
+
+  // Banner style
   const bannerStyle: React.CSSProperties = {
     height: `${props.bannerHeight}px`,
     backgroundColor: props.backgroundColor,
@@ -59,112 +209,87 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
     overflow: 'hidden'
   };
 
-  const searchDocuments = async (query: string): Promise<void> => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Simulate search results for demo purposes
-      // In a real implementation, you would use SharePoint Search API or PnP JS
-      const mockResults: ISearchResult[] = [
-        {
-          title: 'Employee Handbook 2024',
-          url: '/sites/intranet/documents/handbook.pdf',
-          summary: 'Complete guide for new employees including policies, procedures, and benefits information.',
-          author: 'HR Department',
-          modified: '2024-01-15',
-          fileType: 'pdf',
-          path: '/sites/intranet/documents',
-          folder: 'HR Documents'
-        },
-        {
-          title: 'Project Charter Template',
-          url: '/sites/intranet/templates/project-charter.docx',
-          summary: 'Standard template for project initiation and planning documentation.',
-          author: 'Project Management Office',
-          modified: '2024-01-10',
-          fileType: 'docx',
-          path: '/sites/intranet/templates',
-          folder: 'Templates'
-        },
-        {
-          title: 'Annual Budget Report',
-          url: '/sites/intranet/finance/budget-2024.xlsx',
-          summary: 'Comprehensive financial planning document for fiscal year 2024.',
-          author: 'Finance Team',
-          modified: '2024-01-20',
-          fileType: 'xlsx',
-          path: '/sites/intranet/finance',
-          folder: 'Finance'
-        }
-      ];
-
-      // Filter results based on search query
-      const filteredResults = mockResults.filter(result =>
-        result.title.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
-        result.summary.toLowerCase().indexOf(query.toLowerCase()) !== -1
-      );
-
-      setSearchResults(filteredResults);
-
-      // Extract unique folders
-      const uniqueFolders: IFolder[] = [];
-      const folderNames = filteredResults.map(r => r.folder).filter(folder => folder);
-      const uniqueNames = folderNames.filter((name, index) => folderNames.indexOf(name) === index);
-      
-      uniqueNames.forEach(folderName => {
-        if (folderName) {
-          uniqueFolders.push({
-            name: folderName,
-            url: `#${folderName}`,
-            count: filteredResults.filter(r => r.folder === folderName).length
-          });
-        }
-      });
-
-      setFolders(uniqueFolders);
-
-    } catch (err) {
-      setError('Failed to search documents. Please try again.');
-      console.error('Search error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSearch = (newValue?: string): void => {
-    const query = newValue || '';
-    setSearchQuery(query);
-    searchDocuments(query).catch(console.error);
-  };
-
-  const filteredResults = selectedFolder === 'all' 
-    ? searchResults 
-    : searchResults.filter(result => result.folder === selectedFolder);
-
-  const getFileIcon = (fileType: string): string => {
-    switch (fileType.toLowerCase()) {
-      case 'pdf': return 'PDF';
-      case 'docx': case 'doc': return 'WordDocument';
-      case 'xlsx': case 'xls': return 'ExcelDocument';
-      case 'pptx': case 'ppt': return 'PowerPointDocument';
-      default: return 'Document';
-    }
-  };
-
   return (
     <div className={styles.monarchBannerSearch}>
-      {/* Enhanced Professional Banner Section */}
+      {/* Search bar and results list at the top */}
+      <div className={styles.searchArea} ref={searchBoxRef}>
+        <div className={styles.searchContainer}>
+          <SearchBox
+            placeholder={props.searchboxPrompt}
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
+            className={styles.enhancedSearchBox}
+            iconProps={{ iconName: 'Search' }}
+            value={searchQuery}
+            autoComplete="off"
+          />
+          <div style={{ marginTop: 8 }}>
+            <div style={{
+              fontWeight: 600,
+              fontSize: '13px',
+              color: '#605e5c',
+              padding: '8px 12px 4px 12px',
+              borderBottom: '1px solid #f3f2f1',
+              background: '#fff',
+              letterSpacing: '0.5px'
+            }}>
+              Search
+            </div>
+            {isLoading && (
+              <div className={styles.dropdownLoading}>
+                <Spinner size={SpinnerSize.small} />
+                <Text variant="small">Searching...</Text>
+              </div>
+            )}
+            {error && (
+              <div className={styles.dropdownError}>
+                <Icon iconName="ErrorBadge" />
+                <Text variant="small">{error}</Text>
+              </div>
+            )}
+            {!isLoading && !error && (
+              <>
+                {console.log('Rendering mappedResultsRef.current:', mappedResultsRef.current)}
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {mappedResultsRef.current.length > 0 ? (
+                    mappedResultsRef.current.slice(0, 8).map((result, index) => (
+                      <li
+                        key={index}
+                        className={styles.dropdownItem}
+                        onClick={() => handleDocumentClick(result.url)}
+                        role="button"
+                        tabIndex={0}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <span className={styles.dropdownItemIcon}>
+                          <Icon iconName={getFileIcon(result.fileType)} />
+                        </span>
+                        <span className={styles.dropdownItemContent}>
+                          <Text variant="medium" className={styles.dropdownItemTitle}>
+                            {result.title}
+                          </Text>
+                          <Text variant="small" className={styles.dropdownItemSubtitle}>
+                            On the site {result.folder || 'Document Library'}
+                          </Text>
+                        </span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className={styles.dropdownNoResults}>
+                      <Icon iconName="SearchIssue" />
+                      <Text variant="small">No documents found for &quot;{searchQuery}&quot;</Text>
+                    </li>
+                  )}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      {/* Banner below the search bar and results */}
       <div style={bannerStyle} className={styles.bannerSection}>
         <div className={styles.bannerOverlay} />
-        
         <div className={styles.bannerContent}>
-          {/* Professional Header */}
           <div className={styles.brandingSection}>
             <Text variant="mega" className={styles.bannerHeading} styles={{
               root: {
@@ -177,42 +302,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
               {props.bannerHeading}
             </Text>
           </div>
-
-          {/* Simple Search Area */}
-          <div className={styles.searchArea}>
-            <SearchBox
-              placeholder={props.searchboxPrompt}
-              onSearch={handleSearch}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>, newValue?: string) => handleSearch(newValue)}
-              className={styles.enhancedSearchBox}
-              iconProps={{ iconName: 'Search' }}
-            />
-            
-            {/* Quick Action Buttons */}
-            <div className={styles.quickActions}>
-              <DefaultButton 
-                text="Documents" 
-                iconProps={{ iconName: 'TextDocument' }}
-                className={styles.quickActionBtn}
-                onClick={() => handleSearch('document')}
-              />
-              <DefaultButton 
-                text="Templates" 
-                iconProps={{ iconName: 'FileTemplate' }}
-                className={styles.quickActionBtn}
-                onClick={() => handleSearch('template')}
-              />
-              <DefaultButton 
-                text="Forms" 
-                iconProps={{ iconName: 'FormLibrary' }}
-                className={styles.quickActionBtn}
-                onClick={() => handleSearch('form')}
-              />
-            </div>
-          </div>
         </div>
-        
-        {/* Enhanced Decorative elements */}
         <div className={styles.bannerDecorations}>
           <div className={styles.geometricShape1} />
           <div className={styles.geometricShape2} />
@@ -221,136 +311,6 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
           <div className={styles.floatingCard2} />
         </div>
       </div>
-
-      {/* Results Section */}
-      {searchQuery && (
-        <div className={styles.resultsSection}>
-          <div className={styles.container}>
-            
-            {/* Folder Filter */}
-            {props.showFolders && folders.length > 0 && (
-              <div className={styles.filterCard}>
-                <div className={styles.filterCardSection}>
-                  <Pivot
-                    selectedKey={selectedFolder}
-                    onLinkClick={(item: PivotItem) => setSelectedFolder(item?.props.itemKey || 'all')}
-                    className={styles.folderPivot}
-                  >
-                    <PivotItem headerText={`All (${searchResults.length})`} itemKey="all" />
-                    {folders.map(folder => (
-                      <PivotItem 
-                        key={folder.name}
-                        headerText={`${folder.name} (${folder.count})`} 
-                        itemKey={folder.name} 
-                      />
-                    ))}
-                  </Pivot>
-                </div>
-              </div>
-            )}
-
-            {/* Loading Spinner */}
-            {isLoading && (
-              <div className={styles.loadingContainer}>
-                <Spinner size={SpinnerSize.large} label="Searching documents..." />
-              </div>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <MessageBar messageBarType={MessageBarType.error} isMultiline={false}>
-                {error}
-              </MessageBar>
-            )}
-
-            {/* Search Results */}
-            {!isLoading && filteredResults.length > 0 && (
-              <div>
-                <div className={styles.resultsHeader}>
-                  <Text variant="xLarge" className={styles.resultsTitle}>
-                    Found {filteredResults.length} document{filteredResults.length !== 1 ? 's' : ''}
-                  </Text>
-                </div>
-                
-                <div className={styles.documentsGrid}>
-                  {filteredResults.map((result, index) => (
-                    <DocumentCard
-                      key={index}
-                      type={DocumentCardType.normal}
-                      className={styles.documentCard}
-                      onClickHref={result.url}
-                    >
-                      <DocumentCardPreview {...{
-                        previewImages: [{
-                          name: result.title,
-                          linkProps: { href: result.url },
-                          previewImageSrc: undefined,
-                          iconSrc: undefined,
-                          imageFit: 1,
-                          width: 144,
-                          height: 106
-                        }],
-                        getOverflowDocumentCountText: (overflowCount: number) => `+${overflowCount} more`
-                      }} />
-                      
-                      <div className={styles.documentCardContent}>
-                        <DocumentCardTitle 
-                          title={result.title}
-                          shouldTruncate={true}
-                        />
-                        
-                        <div className={styles.documentMeta}>
-                          <Stack horizontal tokens={{ childrenGap: 8 }}>
-                            <Icon iconName={getFileIcon(result.fileType)} />
-                            <Text variant="small">{result.fileType.toUpperCase()}</Text>
-                          </Stack>
-                          <Text variant="small" className={styles.documentAuthor}>
-                            by {result.author}
-                          </Text>
-                          <Text variant="small" className={styles.documentDate}>
-                            Modified {new Date(result.modified).toLocaleDateString()}
-                          </Text>
-                        </div>
-                        
-                        <Text variant="small" className={styles.documentSummary}>
-                          {result.summary}
-                        </Text>
-                        
-                        <DocumentCardLocation 
-                          location={result.path}
-                          locationHref={result.url}
-                        />
-                      </div>
-                    </DocumentCard>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* No Results */}
-            {!isLoading && searchQuery && filteredResults.length === 0 && (
-              <div className={styles.noResultsCard}>
-                <div className={styles.noResultsCardSection}>
-                  <Stack horizontalAlign="center" tokens={{ childrenGap: 16 }}>
-                    <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
-                    <Text variant="xLarge">No documents found</Text>
-                    <Text variant="medium">
-                      Try adjusting your search terms or check if the source libraries are configured correctly.
-                    </Text>
-                    <PrimaryButton 
-                      text="Browse All Documents" 
-                      iconProps={{ iconName: 'FabricFolder' }}
-                      onClick={() => setSearchQuery('')}
-                    />
-                  </Stack>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };
