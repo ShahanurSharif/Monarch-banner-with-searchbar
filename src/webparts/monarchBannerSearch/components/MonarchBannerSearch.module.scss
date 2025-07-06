@@ -26,6 +26,20 @@
 .enhancedSearchBox :global(.ms-SearchBox-clearButton):hover,
 .enhancedSearchBox :global(.ms-SearchBox-clearButton):focus {
   border-radius: 50% !important;
+  background: transparent !important;
+  padding: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.enhancedSearchBox :global(.ms-SearchBox-clearButton > .ms-Button-flexContainer) {
+  border-radius: 50% !important;
+  background: transparent !important;
 }
 
 .searchResultsContainer {

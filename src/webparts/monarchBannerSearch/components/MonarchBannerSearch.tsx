@@ -43,6 +43,15 @@ interface ISearchState {
   hasSearched: boolean;
 }
 
+interface IUserContext {
+  pageContext?: {
+    user?: {
+      displayName?: string;
+      email?: string;
+    };
+  };
+}
+
 const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
   const [searchState, setSearchState] = useState<ISearchState>({
     query: '',
@@ -57,7 +66,16 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
   const debounceTimeout = useRef<number | undefined>(undefined);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Extract user info
+  const userDisplayName = (props.context as IUserContext)?.pageContext?.user?.displayName || '';
+  const userEmail = (props.context as IUserContext)?.pageContext?.user?.email || '';
+  const [firstName, lastName] = userDisplayName.split(' ');
 
+  // Replace placeholders in bannerHeading
+  let bannerHeading = props.bannerHeading || '';
+  bannerHeading = bannerHeading.replace(/\{firstname\}/gi, firstName || '');
+  bannerHeading = bannerHeading.replace(/\{lastname\}/gi, lastName || '');
+  bannerHeading = bannerHeading.replace(/\{email\}/gi, userEmail);
 
   // Enhanced cell mapping with better performance
   const createCellMap = useCallback((cells: ISearchCell[]): Map<string, string> => {
@@ -395,7 +413,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
                 letterSpacing: '-1px'
               }
             }}>
-              {props.bannerHeading}
+              {bannerHeading}
             </Text>
           </div>
           <div className={styles.searchBoxWrapper}>
