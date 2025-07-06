@@ -396,7 +396,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
 
   // Memoized filtered results for performance
   const displayResults = useMemo(() => {
-    return searchState.results.slice(0, 8);
+    return searchState.results.slice(0, 10);
   }, [searchState.results]);
 
   return (
