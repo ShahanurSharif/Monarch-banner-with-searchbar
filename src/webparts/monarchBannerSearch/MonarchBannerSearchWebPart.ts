@@ -144,8 +144,8 @@ export default class MonarchBannerSearchWebPart extends BaseClientSideWebPart<IM
                 }),
                 PropertyPaneSlider('bannerHeight', {
                   label: 'Banner Height (px)',
-                  min: 150,
-                  max: 350,
+                  min: 400,
+                  max: 600,
                   step: 10,
                   showValue: true
                 })

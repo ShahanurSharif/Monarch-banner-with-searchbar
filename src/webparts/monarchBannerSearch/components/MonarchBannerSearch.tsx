@@ -350,8 +350,9 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
   }, []);
 
   // Memoized banner style for performance
+  const clampedBannerHeight = Math.max(400, Math.min(600, props.bannerHeight));
   const bannerStyle: React.CSSProperties = useMemo(() => ({
-    height: `${props.bannerHeight}px`,
+    height: `${clampedBannerHeight}px`,
     backgroundColor: props.backgroundColor,
     display: 'flex',
     alignItems: 'center',
@@ -360,7 +361,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
     color: 'white',
     position: 'relative',
     overflow: 'hidden'
-  }), [props.bannerHeight, props.backgroundColor]);
+  }), [clampedBannerHeight, props.backgroundColor]);
 
   // Render function for FluentUI List items
   const onRenderCell = useCallback((item: ISearchResult, index?: number): JSX.Element => {
