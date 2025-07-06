@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import styles from './MonarchBannerSearch.module.scss';
 import type { IMonarchBannerSearchProps } from './IMonarchBannerSearchProps';
 import { 
@@ -7,7 +7,10 @@ import {
   Text,
   Spinner,
   SpinnerSize,
-  Icon
+  Icon,
+  List,
+  FocusZone,
+  FocusZoneDirection
 } from '@fluentui/react';
 
 interface ISearchResult {
@@ -19,6 +22,7 @@ interface ISearchResult {
   fileType: string;
   path: string;
   folder: string;
+  id: string;
 }
 
 interface ISearchCell {
@@ -30,174 +34,305 @@ interface ISearchRow {
   Cells: ISearchCell[];
 }
 
+interface ISearchState {
+  query: string;
+  results: ISearchResult[];
+  isLoading: boolean;
+  error: string;
+  highlightedIndex: number;
+  hasSearched: boolean;
+}
+
 const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<ISearchResult[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const [searchState, setSearchState] = useState<ISearchState>({
+    query: '',
+    results: [],
+    isLoading: false,
+    error: '',
+    highlightedIndex: -1,
+    hasSearched: false
+  });
+
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const debounceTimeout = useRef<number | undefined>(undefined);
-  const mappedResultsRef = useRef<ISearchResult[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // File icon helper
-  const getFileIcon = (fileType: string): string => {
-    switch (fileType.toLowerCase()) {
-      case 'pdf': return 'PDF';
-      case 'docx': case 'doc': return 'WordDocument';
-      case 'xlsx': case 'xls': return 'ExcelDocument';
-      case 'pptx': case 'ppt': return 'PowerPointDocument';
-      default: return 'Document';
+
+
+  // Enhanced cell mapping with better performance
+  const createCellMap = useCallback((cells: ISearchCell[]): Map<string, string> => {
+    return new Map(cells.map(cell => [cell.Key, cell.Value]));
+  }, []);
+
+  // Improved search result mapping
+  const mapSearchResult = useCallback((row: ISearchRow, index: number): ISearchResult | null => {
+    try {
+      let cells: ISearchCell[] = [];
+      
+      if (row.Cells) {
+        if (Array.isArray(row.Cells)) {
+          cells = row.Cells;
+        } else if ('results' in row.Cells && Array.isArray((row.Cells as { results: ISearchCell[] }).results)) {
+          cells = (row.Cells as { results: ISearchCell[] }).results;
+        }
+      }
+
+      if (!Array.isArray(cells) || cells.length === 0) {
+        console.warn(`Row ${index}: Invalid or empty cells array`);
+        return null;
+      }
+
+      const cellMap = createCellMap(cells);
+      
+      // Enhanced title extraction with fallbacks
+      const getTitle = (): string => {
+        const titleSources = ['Title', 'FileName', 'Name', 'FileLeafRef'];
+        for (const source of titleSources) {
+          const value = cellMap.get(source);
+          if (value && value.trim()) return value.trim();
+        }
+        
+        const path = cellMap.get('Path');
+        if (path) {
+          const pathParts = path.split('/');
+          const fileName = pathParts[pathParts.length - 1];
+          if (fileName && fileName.trim()) return fileName.trim();
+        }
+        
+        return 'Untitled Document';
+      };
+
+      const path = cellMap.get('Path') || '';
+      const author = cellMap.get('Author') || 'Unknown';
+      const modifiedTime = cellMap.get('LastModifiedTime') || new Date().toISOString();
+      let fileType = cellMap.get('FileType') || 'unknown';
+      const siteName = cellMap.get('SiteName') || 'SharePoint';
+      const summary = cellMap.get('HitHighlightedSummary') || '';
+
+      // Extract file type from path if not provided
+      if (!fileType || fileType === 'unknown') {
+        const pathParts = path.split('.');
+        if (pathParts.length > 1) {
+          fileType = pathParts[pathParts.length - 1].toLowerCase();
+        }
+      }
+
+      // Format date consistently
+      const formatDate = (dateString: string): string => {
+        try {
+          const date = new Date(dateString);
+          return date.toISOString().split('T')[0];
+        } catch {
+          return new Date().toISOString().split('T')[0];
+        }
+      };
+
+      return {
+        id: `${index}-${Date.now()}`, // Unique identifier
+        title: getTitle(),
+        url: path,
+        summary: summary.replace(/<[^>]*>/g, '').trim(),
+        author: author,
+        modified: formatDate(modifiedTime),
+        fileType: fileType,
+        path: path.substring(0, path.lastIndexOf('/')) || path,
+        folder: siteName
+      };
+    } catch (err) {
+      console.error(`Error mapping search result at index ${index}:`, err, row);
+      return null;
     }
-  };
+  }, [createCellMap]);
 
-  // Handle document click
-  const handleDocumentClick = (url: string): void => {
-    setHighlightedIndex(-1);
-    window.open(url, '_blank');
-  };
-
-  // Search function
-  const searchDocuments = async (query: string): Promise<void> => {
+  // Enhanced search API with better error handling and abort support
+  const searchDocuments = useCallback(async (query: string): Promise<void> => {
     if (!query.trim()) {
-      setSearchResults([]);
-      setIsLoading(false);
-      setError('');
+      setSearchState(prev => ({
+        ...prev,
+        results: [],
+        isLoading: false,
+        error: '',
+        hasSearched: false
+      }));
       return;
     }
-    setIsLoading(true);
-    setError('');
+
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+
+    setSearchState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: '',
+      hasSearched: true
+    }));
+
     try {
-      const webUrl = (props.context as { pageContext?: { web?: { absoluteUrl?: string } } }).pageContext?.web?.absoluteUrl || window.location.origin;
-      const searchUrl = `${webUrl}/_api/search/query?querytext='${encodeURIComponent(query)}*'&selectproperties='Title,Path,Author,LastModifiedTime,FileType,SiteName,SPWebUrl,HitHighlightedSummary'&rowlimit=20`;
+      const webUrl = (props.context as { pageContext?: { web?: { absoluteUrl?: string } } })
+        .pageContext?.web?.absoluteUrl || window.location.origin;
+      
+      const searchUrl = `${webUrl}/_api/search/query?` + 
+        `querytext='${encodeURIComponent(query)}*'&` +
+        `selectproperties='Title,Path,Author,LastModifiedTime,FileType,SiteName,SPWebUrl,HitHighlightedSummary,FileName,Name,FileLeafRef'&` +
+        `rowlimit=20&` +
+        `trimduplicates=true`;
+
       const response = await fetch(searchUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json;odata=verbose',
           'Content-Type': 'application/json;odata=verbose'
-        }
+        },
+        signal: abortControllerRef.current.signal
       });
+
       if (!response.ok) {
         throw new Error(`Search failed: ${response.status} ${response.statusText}`);
       }
-      const data = await response.json();
-      // Defensive: handle both .Rows and .Rows.results
-      let searchRows: ISearchRow[] = [];
-      if (data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows) {
-        if (Array.isArray(data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows)) {
-          searchRows = data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows;
-        } else if ('results' in data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows && Array.isArray(data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows.results)) {
-          searchRows = data.d.query.PrimaryQueryResult.RelevantResults.Table.Rows.results;
-        }
-      }
-      console.log('Raw searchRows:', searchRows);
-      const mappedResults: ISearchResult[] = searchRows.map((row: ISearchRow, idx: number) => {
-        try {
-          let cells: ISearchCell[] = [];
-          if (row.Cells) {
-            if (Array.isArray(row.Cells)) {
-              cells = row.Cells;
-            } else if ('results' in row.Cells && Array.isArray((row.Cells as { results: ISearchCell[] }).results)) {
-              cells = (row.Cells as { results: ISearchCell[] }).results;
-            }
-          }
-          if (!Array.isArray(cells)) {
-            throw new Error('Row.Cells is missing or not an array/results');
-          }
-          console.log('Cells:', cells.map((cell: ISearchCell) => ({ key: cell.Key, value: cell.Value })));
-          const getCell = (key: string): string => {
-            for (let i = 0; i < cells.length; i++) {
-              if (cells[i].Key === key) {
-                return cells[i].Value;
-              }
-            }
-            return '';
-          };
-          const title =
-            getCell('Title') ||
-            getCell('FileName') ||
-            getCell('Name') ||
-            getCell('FileLeafRef') ||
-            (getCell('Path') ? getCell('Path').split('/').pop() : undefined) ||
-            'Untitled Document';
-          const path = getCell('Path') || '';
-          const author = getCell('Author') || 'Unknown';
-          const modified = getCell('LastModifiedTime') || new Date().toISOString();
-          const fileType = getCell('FileType') || 'unknown';
-          const siteName = getCell('SiteName') || 'SharePoint';
-          const summary = getCell('HitHighlightedSummary') || '';
-          let actualFileType = fileType;
-          if (!actualFileType && path) {
-            const pathParts = path.split('.');
-            if (pathParts.length > 1) {
-              actualFileType = pathParts[pathParts.length - 1].toLowerCase();
-            }
-          }
-          return {
-            title,
-            url: path,
-            summary: summary.replace(/<[^>]*>/g, ''),
-            author,
-            modified: new Date(modified).toISOString().split('T')[0],
-            fileType: actualFileType,
-            path: path.substring(0, path.lastIndexOf('/')) || path,
-            folder: siteName
-          };
-        } catch (err) {
-          console.error('Mapping error at row', idx, err, row);
-          return null;
-        }
-      }).filter((item): item is ISearchResult => !!item);
-      console.log('Mapped results:', mappedResults);
-      mappedResultsRef.current = mappedResults;
-      setSearchResults(mappedResults);
-      setError(''); // Only set error if fetch fails
-      setHighlightedIndex(mappedResults.length > 0 ? 0 : -1);
-    } catch (err) {
-      console.error('Search error:', err);
-      setError('Failed to search documents. Please try again.');
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // Debounced search
+      const data = await response.json();
+      
+      // Enhanced response parsing with better error handling
+      let searchRows: ISearchRow[] = [];
+      
+      try {
+        const tableRows = data?.d?.query?.PrimaryQueryResult?.RelevantResults?.Table?.Rows;
+        
+        if (tableRows) {
+          if (Array.isArray(tableRows)) {
+            searchRows = tableRows;
+          } else if ('results' in tableRows && Array.isArray(tableRows.results)) {
+            searchRows = tableRows.results;
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing search response:', parseError);
+        throw new Error('Invalid search response format');
+      }
+
+      // Map results with error handling for individual items
+      const mappedResults: ISearchResult[] = searchRows
+        .map((row, index) => mapSearchResult(row, index))
+        .filter((item): item is ISearchResult => item !== null);
+
+      setSearchState(prev => ({
+        ...prev,
+        results: mappedResults,
+        error: '',
+        highlightedIndex: mappedResults.length > 0 ? 0 : -1,
+        isLoading: false
+      }));
+
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
+      }
+      
+      console.error('Search error:', err);
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Failed to search documents. Please try again.';
+      
+      setSearchState(prev => ({
+        ...prev,
+        error: errorMessage,
+        results: [],
+        isLoading: false
+      }));
+    }
+  }, [props.context, mapSearchResult]);
+
+  // Enhanced debounced search with cleanup
   const debouncedSearch = useCallback((query: string): void => {
     if (debounceTimeout.current !== undefined) {
       clearTimeout(debounceTimeout.current);
     }
+    
     debounceTimeout.current = window.setTimeout(() => {
       searchDocuments(query).catch(console.error);
     }, 300);
+  }, [searchDocuments]);
+
+  // Handle document click with better error handling
+  const handleDocumentClick = useCallback((url: string): void => {
+    if (!url) {
+      console.error('No URL provided for document');
+      return;
+    }
+    
+    setSearchState(prev => ({ ...prev, highlightedIndex: -1 }));
+    
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Error opening document:', err);
+    }
   }, []);
 
-  // Handle input change
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>, newValue?: string): void => {
-    setSearchQuery(newValue || '');
-    debouncedSearch(newValue || '');
-  };
+  // Enhanced input change handler
+  const handleSearchChange = useCallback((
+    event: React.ChangeEvent<HTMLInputElement>, 
+    newValue?: string
+  ): void => {
+    const query = newValue || '';
+    setSearchState(prev => ({ ...prev, query }));
+    debouncedSearch(query);
+  }, [debouncedSearch]);
 
-  // Handle keyboard navigation
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setHighlightedIndex((prev) => (prev + 1) % searchResults.length);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setHighlightedIndex((prev) => (prev - 1 + searchResults.length) % searchResults.length);
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
-        handleDocumentClick(searchResults[highlightedIndex].url);
-      }
-    } else if (event.key === 'Escape') {
-      setHighlightedIndex(-1);
+  // Enhanced keyboard navigation
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>): void => {
+    const { results, highlightedIndex } = searchState;
+    
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (results.length > 0) {
+          const nextIndex = highlightedIndex < results.length - 1 ? highlightedIndex + 1 : 0;
+          setSearchState(prev => ({ ...prev, highlightedIndex: nextIndex }));
+        }
+        break;
+        
+      case 'ArrowUp':
+        event.preventDefault();
+        if (results.length > 0) {
+          const prevIndex = highlightedIndex > 0 ? highlightedIndex - 1 : results.length - 1;
+          setSearchState(prev => ({ ...prev, highlightedIndex: prevIndex }));
+        }
+        break;
+        
+      case 'Enter':
+        event.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < results.length) {
+          handleDocumentClick(results[highlightedIndex].url);
+        }
+        break;
+        
+      case 'Escape':
+        setSearchState(prev => ({ ...prev, highlightedIndex: -1, query: '', results: [], hasSearched: false }));
+        break;
     }
-  };
+  }, [searchState, handleDocumentClick]);
 
-  // Banner style
-  const bannerStyle: React.CSSProperties = {
+  // Cleanup effect
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Memoized banner style for performance
+  const bannerStyle: React.CSSProperties = useMemo(() => ({
     height: `${props.bannerHeight}px`,
     backgroundColor: props.backgroundColor,
     display: 'flex',
@@ -207,11 +342,47 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
     color: 'white',
     position: 'relative',
     overflow: 'hidden'
-  };
+  }), [props.bannerHeight, props.backgroundColor]);
+
+  // Render function for FluentUI List items
+  const onRenderCell = useCallback((item: ISearchResult, index?: number): JSX.Element => {
+    const isSelected = index === searchState.highlightedIndex;
+
+    return (
+      <div 
+        className={`${styles.simpleResultItem} ${isSelected ? styles.simpleResultItemActive : ''}`}
+        onMouseEnter={() => setSearchState(prev => ({ ...prev, highlightedIndex: index || -1 }))}
+        data-is-focusable={true}
+        onClick={() => handleDocumentClick(item.url)}
+      >
+        <div className={styles.resultContent}>
+          <div className={styles.resultLeft}>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.resultTitle}
+              tabIndex={-1}
+            >
+              {item.title}
+            </a>
+          </div>
+          <div className={styles.resultRight}>
+            <span className={styles.resultFileType}>{item.fileType.toUpperCase()}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }, [searchState.highlightedIndex, handleDocumentClick]);
+
+  // Memoized filtered results for performance
+  const displayResults = useMemo(() => {
+    return searchState.results.slice(0, 8);
+  }, [searchState.results]);
 
   return (
     <div className={styles.monarchBannerSearch}>
-      {/* Search bar and results list at the top */}
+      {/* Enhanced search area with better accessibility */}
       <div className={styles.searchArea} ref={searchBoxRef}>
         <div className={styles.searchContainer}>
           <SearchBox
@@ -220,73 +391,65 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
             onKeyDown={handleKeyDown}
             className={styles.enhancedSearchBox}
             iconProps={{ iconName: 'Search' }}
-            value={searchQuery}
+            value={searchState.query}
             autoComplete="off"
+            aria-label="Search documents"
+            aria-expanded={searchState.results.length > 0}
+            aria-activedescendant={searchState.highlightedIndex >= 0 ? `result-${searchState.highlightedIndex}` : undefined}
           />
-          <div style={{ marginTop: 8 }}>
-            <div style={{
-              fontWeight: 600,
-              fontSize: '13px',
-              color: '#605e5c',
-              padding: '8px 12px 4px 12px',
-              borderBottom: '1px solid #f3f2f1',
-              background: '#fff',
-              letterSpacing: '0.5px'
-            }}>
-              Search
-            </div>
-            {isLoading && (
-              <div className={styles.dropdownLoading}>
-                <Spinner size={SpinnerSize.small} />
-                <Text variant="small">Searching...</Text>
+          
+          {(searchState.hasSearched || searchState.isLoading) && (
+            <div className={styles.searchResultsContainer}>
+              <div className={styles.searchResultsHeader}>
+                {searchState.isLoading ? 'Searching...' : 
+                 searchState.results.length > 0 ? `Found ${searchState.results.length} result${searchState.results.length !== 1 ? 's' : ''}` :
+                 'Search Results'}
               </div>
-            )}
-            {error && (
-              <div className={styles.dropdownError}>
-                <Icon iconName="ErrorBadge" />
-                <Text variant="small">{error}</Text>
-              </div>
-            )}
-            {!isLoading && !error && (
-              <>
-                {console.log('Rendering mappedResultsRef.current:', mappedResultsRef.current)}
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                  {mappedResultsRef.current.length > 0 ? (
-                    mappedResultsRef.current.slice(0, 8).map((result, index) => (
-                      <li
-                        key={index}
-                        className={styles.dropdownItem}
-                        onClick={() => handleDocumentClick(result.url)}
-                        role="button"
-                        tabIndex={0}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <span className={styles.dropdownItemIcon}>
-                          <Icon iconName={getFileIcon(result.fileType)} />
-                        </span>
-                        <span className={styles.dropdownItemContent}>
-                          <Text variant="medium" className={styles.dropdownItemTitle}>
-                            {result.title}
-                          </Text>
-                          <Text variant="small" className={styles.dropdownItemSubtitle}>
-                            On the site {result.folder || 'Document Library'}
-                          </Text>
-                        </span>
-                      </li>
-                    ))
+              
+              {searchState.isLoading && (
+                <div className={styles.dropdownLoading}>
+                  <Spinner size={SpinnerSize.small} />
+                  <Text variant="small">Searching documents...</Text>
+                </div>
+              )}
+              
+              {searchState.error && (
+                <div className={styles.dropdownError}>
+                  <Icon iconName="ErrorBadge" />
+                  <Text variant="small">{searchState.error}</Text>
+                </div>
+              )}
+              
+              {!searchState.isLoading && !searchState.error && (
+                <div className={styles.searchResultsList}>
+                  {searchState.hasSearched && displayResults.length === 0 ? (
+                    <div className={styles.professionalNoResults}>
+                      <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
+                      <Text variant="medium" className={styles.noResultsText}>
+                        No documents found for &quot;{searchState.query}&quot;
+                      </Text>
+                      <Text variant="small" className={styles.noResultsSubtext}>
+                        Try adjusting your search terms or check spelling
+                      </Text>
+                    </div>
                   ) : (
-                    <li className={styles.dropdownNoResults}>
-                      <Icon iconName="SearchIssue" />
-                      <Text variant="small">No documents found for &quot;{searchQuery}&quot;</Text>
-                    </li>
+                    <FocusZone direction={FocusZoneDirection.vertical}>
+                      <List
+                        items={displayResults}
+                        onRenderCell={onRenderCell}
+                        role="listbox"
+                        aria-label="Search results"
+                      />
+                    </FocusZone>
                   )}
-                </ul>
-              </>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-      {/* Banner below the search bar and results */}
+      
+      {/* Banner section remains the same */}
       <div style={bannerStyle} className={styles.bannerSection}>
         <div className={styles.bannerOverlay} />
         <div className={styles.bannerContent}>

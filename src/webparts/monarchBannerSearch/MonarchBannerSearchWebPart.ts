@@ -34,7 +34,7 @@ export default class MonarchBannerSearchWebPart extends BaseClientSideWebPart<IM
       MonarchBannerSearch,
       {
         description: this.properties.description,
-        bannerHeading: this.properties.bannerHeading || 'Hello Monarch',
+        bannerHeading: this.properties.bannerHeading || 'Hello Shan',
         searchboxPrompt: this.properties.searchboxPrompt || 'Search for documents...',
         bannerHeight: this.properties.bannerHeight || 180,
         backgroundColor: this.properties.backgroundColor || '#8B5CF6',

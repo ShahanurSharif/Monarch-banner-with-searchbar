@@ -1,5 +1,80 @@
 @import '~@fluentui/react/dist/sass/References.scss';
 
+// Minimal styles for MonarchBannerSearch
+.monarchBannerSearch {
+  width: 100%;
+}
+
+.searchArea {
+  width: 100%;
+}
+
+.searchContainer {
+  width: 100%;
+}
+
+.enhancedSearchBox {
+  /* No custom styles, use Fluent UI defaults */
+}
+
+.searchResultsContainer {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.searchResultsHeader {
+  font-weight: 600;
+  font-size: 14px;
+  color: #222;
+  padding: 8px 0;
+}
+
+.searchResultsList {
+  padding: 0;
+}
+
+.resultContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.resultLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.resultTitle {
+  font-size: 16px;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+}
+
+.resultRight {
+  flex-shrink: 0;
+}
+
+.resultFileType {
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dropdownLoading {}
+.dropdownError {}
+.professionalNoResults {}
+.noResultsIcon {}
+.noResultsText {}
+.noResultsSubtext {}
+.simpleResultItem {}
+.simpleResultItemActive {}
+
 .monarchBannerSearch {
   width: 100%;
   overflow: hidden;
@@ -107,182 +182,472 @@
       
       // Simple Search Area
       .searchArea {
-        margin: 0 auto;
-        max-width: 600px;
-        position: relative;
-        
-        .searchContainer {
-          position: relative;
+        width: 100%;
+      }
+      
+      .searchContainer {
+        width: 100%;
+      }
+      
+      .enhancedSearchBox {
+        /* No custom styles, use Fluent UI defaults */
+      }
+      
+      .searchResultsContainer {
+        width: 100%;
+        margin-top: 8px;
+      }
+      
+      .searchResultsHeader {
+        font-weight: 600;
+        font-size: 14px;
+        color: #222;
+        padding: 8px 0;
+      }
+      
+      .searchResultsList {
+        padding: 0;
+      }
+      
+      // Search Dropdown Styles
+      .searchDropdown {
+        position: absolute;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #d1d1d1;
+        border-radius: 4px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        z-index: 1000;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 0;
+      }
+      
+      .dropdownResults {
+        .dropdownList {
+          padding: 0;
+          margin: 0;
+        }
+      }
+      
+      // Professional result item styling
+      .professionalResultItem {
+        margin: 8px 0;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid #e1dfdd;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+        &:hover,
+        &.professionalResultItemActive,
+        &:focus {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          border-color: #c7c6c4;
+          outline: none;
+        }
+
+        &:first-child {
+          margin-top: 0;
+        }
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      .resultDocumentCard {
+        margin: 0;
+        border: none;
+        border-radius: 8px;
+        box-shadow: none;
+        background: transparent;
+        width: 100%;
+
+        // Override DocumentCard default styles
+        :global(.ms-DocumentCard) {
+          border: none;
+          box-shadow: none;
+          background: transparent;
+          border-radius: 8px;
           width: 100%;
         }
-        
-        .enhancedSearchBox {
-          margin-bottom: 16px;
-          
-          :global(.ms-SearchBox) {
-            background: rgba(255, 255, 255, 1);
-            border-radius: 50px;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            min-height: 50px;
-            
-            &:hover {
-              box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
-              transform: translateY(-1px);
-            }
-            
-            &:focus-within {
-              box-shadow: 0 8px 35px rgba(139, 92, 246, 0.3);
-              transform: translateY(-2px);
-            }
-          }
-          
-          :global(.ms-SearchBox-field) {
-            font-size: 16px;
-            padding: 0 24px;
-            font-weight: 400;
-            color: #323130;
-            
-            &::placeholder {
-              color: #a19f9d;
-            }
-          }
-          
-          :global(.ms-SearchBox-iconContainer) {
-            right: 18px;
-            
-            :global(.ms-SearchBox-icon) {
-              color: #8B5CF6;
-              font-size: 18px;
-            }
-          }
-        }
-        
-                // Search Dropdown Styles
-        .searchDropdown {
-          position: absolute;
-          top: 70px;
-          left: 0;
-          right: 0;
-          background: #fff;
-          border: 1px solid #d1d1d1;
-          border-radius: 4px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-          z-index: 1000;
-          max-height: 400px;
-          overflow-y: auto;
+
+        :global(.ms-DocumentCard-details) {
           padding: 0;
         }
-        
-        .dropdownResults {
-          .dropdownList {
-            padding: 0;
-            margin: 0;
-          }
-        }
-        
-        .dropdownItem {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 8px 12px;
-          cursor: pointer;
-          background: none;
-          border: none;
-          border-bottom: 1px solid #f3f2f1;
-          transition: background 0.1s;
-          min-height: 36px;
+      }
 
-          &:hover,
-          &.dropdownItemActive {
-            background: #f3f2f1 !important;
-          }
+      .cardContent {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 16px 20px;
+        width: 100%;
+      }
 
-          &:last-child {
-            border-bottom: none;
-          }
+      .fileIconContainer {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        border: 1px solid #e1dfdd;
+      }
+
+      .professionalFileIcon {
+        font-size: 24px;
+        color: #0078d4;
+      }
+
+      .cardMainContent {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .cardMetadata {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 8px 0 0 0;
+      }
+
+      .professionalSiteName {
+        color: #0078d4;
+        font-weight: 600;
+        font-size: 13px;
+        background: #f3f9ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+        max-width: fit-content;
+      }
+
+      .professionalSummary {
+        color: #605e5c;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-top: 4px;
+        font-style: italic;
+      }
+
+      // Simple result item styling - FIXED LAYOUT
+      .simpleResultItem {
+        cursor: pointer;
+        border-bottom: 1px solid #edebe9;
+        background: #ffffff;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background: #f5f5f5;
         }
-        
-        .dropdownItemIcon {
-          flex-shrink: 0;
-          width: 18px;
-          height: 18px;
-          margin-top: 2px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          :global(.ms-Icon) {
-            color: #0078d4;
-            font-size: 16px;
-          }
+
+        &.simpleResultItemActive,
+        &:focus {
+          background: #f3f9ff;
+          outline: none;
         }
-        
-        .dropdownItemContent {
-          flex: 1;
-          min-width: 0;
+
+        &:last-child {
+          border-bottom: none;
         }
+      }
+
+      .resultContent {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+      }
+
+      .resultLeft {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .resultTitle {
+        font-size: 16px;
+        color: #222;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-decoration: none;
+      }
+
+      .resultRight {
+        flex-shrink: 0;
+      }
+
+      .resultFileType {
+        font-size: 13px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      // FluentUI List specific styles
+      :global(.ms-List-cell) {
+        padding: 0;
+        min-height: auto;
+        margin: 0;
+        border: none;
+        background: transparent;
+      }
+
+      :global(.ms-FocusZone) {
+        outline: none;
+      }
+
+      :global(.ms-List) {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+      }
+
+      :global(.ms-List-page) {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+      }
+
+      // DocumentCard component overrides
+      :global(.ms-DocumentCardActivity) {
+        margin-top: 12px;
+        padding: 8px 0 0 0;
+        border-top: 1px solid #f3f2f1;
         
-        .dropdownItemTitle {
-          color: #0078d4;
-          font-size: 14px;
-          font-weight: 400;
-          margin: 0;
-          padding: 0;
-          line-height: 1.2;
-          text-decoration: none;
-          display: block;
-          &:hover {
-            text-decoration: underline;
-          }
-        }
-        
-        .dropdownItemSubtitle {
-          color: #605e5c;
+        :global(.ms-DocumentCardActivity-details) {
           font-size: 12px;
-          line-height: 1.2;
-          margin: 2px 0 0 0;
-          padding: 0;
-          display: block;
+          color: #605e5c;
+          font-weight: 500;
         }
         
-        .dropdownNoResults {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          padding: 24px 16px;
-          color: #605e5c;
-          text-align: center;
-          font-size: 14px;
-          :global(.ms-Icon) {
-            font-size: 20px;
-            color: #a19f9d;
+        :global(.ms-Persona) {
+          :global(.ms-Persona-coin) {
+            width: 24px;
+            height: 24px;
+          }
+          
+          :global(.ms-Persona-initials) {
+            font-size: 10px;
+            font-weight: 600;
           }
         }
         
-        .dropdownLoading {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 16px;
-          color: #605e5c;
-          font-size: 14px;
-        }
-        
-        .dropdownError {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 16px;
-          color: #d13438;
-          :global(.ms-Icon) {
-            color: #d13438;
+        :global(.ms-Persona-details) {
+          :global(.ms-Persona-primaryText) {
+            font-size: 12px;
+            color: #605e5c;
+            font-weight: 500;
           }
         }
       }
       
+      .dropdownItemIcon {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        :global(.ms-Icon) {
+          color: #0078d4;
+          font-size: 16px;
+        }
+      }
+      
+      .dropdownItemContent {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .dropdownItemTitle {
+        color: #0078d4;
+        font-size: 14px;
+        font-weight: 400;
+        margin: 0;
+        padding: 0;
+        line-height: 1.2;
+        text-decoration: none;
+        display: block;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+      
+      .dropdownItemSubtitle {
+        color: #605e5c;
+        font-size: 12px;
+        line-height: 1.2;
+        margin: 2px 0 0 0;
+        padding: 0;
+        display: block;
+      }
 
+      .dropdownItemSummary {
+        color: #605e5c;
+        font-size: 11px;
+        line-height: 1.3;
+        margin: 4px 0 0 0;
+        padding: 0;
+        display: block;
+        opacity: 0.8;
+      }
+      
+      .professionalNoResults {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 60px 40px;
+        text-align: center;
+        background: linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%);
+        border-radius: 12px;
+        margin: 24px;
+        border: 1px solid #edebe9;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, #0078d4, #106ebe, #0078d4);
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(circle, rgba(0, 120, 212, 0.05) 0%, transparent 70%);
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+        }
+      }
+
+      .noResultsIcon {
+        font-size: 64px;
+        color: #a19f9d;
+        opacity: 0.8;
+        position: relative;
+        z-index: 1;
+      }
+
+      .noResultsText {
+        color: #323130;
+        font-weight: 600;
+        font-size: 20px;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+        letter-spacing: -0.01em;
+      }
+
+      .noResultsSubtext {
+        color: #605e5c;
+        font-size: 15px;
+        margin: 0;
+        max-width: 320px;
+        line-height: 1.5;
+        position: relative;
+        z-index: 1;
+      }
+
+      .dropdownNoResults {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 24px 16px;
+        color: #605e5c;
+        text-align: center;
+        font-size: 14px;
+        :global(.ms-Icon) {
+          font-size: 20px;
+          color: #a19f9d;
+        }
+      }
+      
+      .dropdownLoading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 40px 32px;
+        color: #605e5c;
+        font-size: 15px;
+        background: linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%);
+        border-radius: 12px;
+        margin: 24px;
+        border: 1px solid #edebe9;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(0, 120, 212, 0.1), transparent);
+          animation: shimmer 2s infinite;
+        }
+
+        :global(.ms-Spinner) {
+          :global(.ms-Spinner-circle) {
+            border-color: #0078d4 transparent transparent transparent;
+            border-width: 3px;
+          }
+        }
+      }
+      
+      .dropdownError {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 24px 28px;
+        color: #d13438;
+        background: linear-gradient(135deg, #fef7f7 0%, #fdf2f2 100%);
+        border: 1px solid #f5c2c7;
+        margin: 24px;
+        border-radius: 12px;
+        border-left: 4px solid #d13438;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(209, 52, 56, 0.3), transparent);
+        }
+        
+        :global(.ms-Icon) {
+          color: #d13438;
+          font-size: 20px;
+        }
+      }
     }
     
     // Enhanced Decorative elements
@@ -398,7 +763,7 @@
     }
     
     .loadingContainer {
-  text-align: center;
+      text-align: center;
       padding: 4rem 0;
       
       :global(.ms-Spinner-circle) {
@@ -444,7 +809,7 @@
         transition: all 0.3s ease;
         background: white;
 
-    &:hover {
+        &:hover {
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
           transform: translateY(-2px);
         }
@@ -495,8 +860,6 @@
       }
     }
   }
-  
-
 }
 
 // Enhanced Animation keyframes
@@ -526,7 +889,14 @@
   }
 }
 
-
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
 
 // Responsive adjustments
 @media (max-width: 1024px) {
@@ -536,7 +906,8 @@
       
       .bannerContent {
         .searchArea {
-          max-width: 550px;
+          max-width: 100%;
+          padding: 0;
         }
       }
     }
@@ -554,9 +925,10 @@
       min-height: 180px;
       
       .bannerContent {
-        
         .searchArea {
-          margin: 16px auto;
+          margin: 16px 0;
+          width: 100%;
+          padding: 0;
           
           .searchContainer {
             .searchDropdown {
@@ -674,8 +1046,6 @@
         }
       }
     }
-    
-
   }
 }
 
