@@ -14,7 +14,18 @@
 }
 
 .enhancedSearchBox {
-  /* No custom styles, use Fluent UI defaults */
+  border-radius: 17px;
+}
+
+.enhancedSearchBox :global(.ms-SearchBox),
+.enhancedSearchBox :global(.ms-SearchBox.is-active) {
+  border-radius: 17px;
+}
+
+.enhancedSearchBox :global(.ms-SearchBox-clearButton),
+.enhancedSearchBox :global(.ms-SearchBox-clearButton):hover,
+.enhancedSearchBox :global(.ms-SearchBox-clearButton):focus {
+  border-radius: 50% !important;
 }
 
 .searchResultsContainer {
@@ -31,13 +42,15 @@
 
 .searchResultsList {
   padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .resultContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 8px 10px;
   border-bottom: 1px solid #eee;
 }
 
@@ -81,20 +94,15 @@
   
   // Banner Section
   .bannerSection {
-    position: relative;
     width: 100%;
-    min-height: 160px;
+    min-height: 320px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    color: white;
-    text-align: center;
-    padding: 1.2rem;
-    box-sizing: border-box;
-    
-    // Ensure text is readable over gradient
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(90deg, #a445b2 0%, #d41872 50%, #ff6a00 100%);
+    position: relative;
+    padding: 0;
     
     .bannerOverlay {
       position: absolute;
@@ -109,26 +117,26 @@
     .bannerContent {
       position: relative;
       z-index: 2;
-      max-width: 800px;
       width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      padding: 0;
       
       .brandingSection {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
+        margin-bottom: 32px;
+        text-align: center;
       }
       
       .bannerHeading {
-        margin-bottom: 1.5rem;
-        font-weight: 600;
-        letter-spacing: -0.02em;
-        line-height: 1.2;
-        
-        @media (max-width: 768px) {
-          font-size: 1.8rem;
-          margin-bottom: 1rem;
-        }
+        color: #fff;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.2);
       }
       
       .searchContainer {
@@ -367,7 +375,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 0;
+        padding: 8px 10px;
       }
 
       .resultLeft {
@@ -1058,4 +1066,13 @@
   bottom: 0;
   z-index: 999;
   background: transparent;
+}
+
+.searchBoxWrapper {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }

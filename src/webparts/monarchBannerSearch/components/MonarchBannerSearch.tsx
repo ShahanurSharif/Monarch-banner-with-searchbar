@@ -347,6 +347,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
   // Render function for FluentUI List items
   const onRenderCell = useCallback((item: ISearchResult, index?: number): JSX.Element => {
     const isSelected = index === searchState.highlightedIndex;
+    const displayTitle = item.title.length > 43 ? item.title.slice(0, 43) + '...' : item.title;
 
     return (
       <div 
@@ -364,7 +365,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
               className={styles.resultTitle}
               tabIndex={-1}
             >
-              {item.title}
+              {displayTitle}
             </a>
           </div>
           <div className={styles.resultRight}>
@@ -382,74 +383,6 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
 
   return (
     <div className={styles.monarchBannerSearch}>
-      {/* Enhanced search area with better accessibility */}
-      <div className={styles.searchArea} ref={searchBoxRef}>
-        <div className={styles.searchContainer}>
-          <SearchBox
-            placeholder={props.searchboxPrompt}
-            onChange={handleSearchChange}
-            onKeyDown={handleKeyDown}
-            className={styles.enhancedSearchBox}
-            iconProps={{ iconName: 'Search' }}
-            value={searchState.query}
-            autoComplete="off"
-            aria-label="Search documents"
-            aria-expanded={searchState.results.length > 0}
-            aria-activedescendant={searchState.highlightedIndex >= 0 ? `result-${searchState.highlightedIndex}` : undefined}
-          />
-          
-          {(searchState.hasSearched || searchState.isLoading) && (
-            <div className={styles.searchResultsContainer}>
-              <div className={styles.searchResultsHeader}>
-                {searchState.isLoading ? 'Searching...' : 
-                 searchState.results.length > 0 ? `Found ${searchState.results.length} result${searchState.results.length !== 1 ? 's' : ''}` :
-                 'Search Results'}
-              </div>
-              
-              {searchState.isLoading && (
-                <div className={styles.dropdownLoading}>
-                  <Spinner size={SpinnerSize.small} />
-                  <Text variant="small">Searching documents...</Text>
-                </div>
-              )}
-              
-              {searchState.error && (
-                <div className={styles.dropdownError}>
-                  <Icon iconName="ErrorBadge" />
-                  <Text variant="small">{searchState.error}</Text>
-                </div>
-              )}
-              
-              {!searchState.isLoading && !searchState.error && (
-                <div className={styles.searchResultsList}>
-                  {searchState.hasSearched && displayResults.length === 0 ? (
-                    <div className={styles.professionalNoResults}>
-                      <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
-                      <Text variant="medium" className={styles.noResultsText}>
-                        No documents found for &quot;{searchState.query}&quot;
-                      </Text>
-                      <Text variant="small" className={styles.noResultsSubtext}>
-                        Try adjusting your search terms or check spelling
-                      </Text>
-                    </div>
-                  ) : (
-                    <FocusZone direction={FocusZoneDirection.vertical}>
-                      <List
-                        items={displayResults}
-                        onRenderCell={onRenderCell}
-                        role="listbox"
-                        aria-label="Search results"
-                      />
-                    </FocusZone>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Banner section remains the same */}
       <div style={bannerStyle} className={styles.bannerSection}>
         <div className={styles.bannerOverlay} />
         <div className={styles.bannerContent}>
@@ -464,6 +397,69 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
             }}>
               {props.bannerHeading}
             </Text>
+          </div>
+          <div className={styles.searchBoxWrapper}>
+            <div className={styles.searchArea} ref={searchBoxRef}>
+              <div className={styles.searchContainer}>
+                <SearchBox
+                  styles={{
+                    root: {
+                      border: 'none !important'
+                    }
+                  }}
+                  placeholder={props.searchboxPrompt}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleKeyDown}
+                  className={styles.enhancedSearchBox}
+                  iconProps={{ iconName: 'Search' }}
+                  value={searchState.query}
+                  autoComplete="off"
+                  aria-label="Search documents"
+                  aria-expanded={searchState.results.length > 0}
+                  aria-activedescendant={searchState.highlightedIndex >= 0 ? `result-${searchState.highlightedIndex}` : undefined}
+                />
+                {(searchState.hasSearched || searchState.isLoading) && (
+                  <div className={styles.searchResultsContainer}>
+                    {searchState.isLoading && (
+                      <div className={styles.dropdownLoading}>
+                        <Spinner size={SpinnerSize.small} />
+                        <Text variant="small">Searching documents...</Text>
+                      </div>
+                    )}
+                    {searchState.error && (
+                      <div className={styles.dropdownError}>
+                        <Icon iconName="ErrorBadge" />
+                        <Text variant="small">{searchState.error}</Text>
+                      </div>
+                    )}
+                    {!searchState.isLoading && !searchState.error && (
+                      <div className={styles.searchResultsList}>
+                        {searchState.hasSearched && displayResults.length === 0 ? (
+                          <div className={styles.professionalNoResults}>
+                            <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
+                            <Text variant="medium" className={styles.noResultsText}>
+                              No documents found for &quot;{searchState.query}&quot;
+                            </Text>
+                            <Text variant="small" className={styles.noResultsSubtext}>
+                              Try adjusting your search terms or check spelling
+                            </Text>
+                          </div>
+                        ) : (
+                          <FocusZone direction={FocusZoneDirection.vertical}>
+                            <List
+                              items={displayResults}
+                              onRenderCell={onRenderCell}
+                              role="listbox"
+                              aria-label="Search results"
+                            />
+                          </FocusZone>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
         <div className={styles.bannerDecorations}>
