@@ -127,11 +127,13 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
       const siteName = cellMap.get('SiteName') || 'SharePoint';
       const summary = cellMap.get('HitHighlightedSummary') || '';
 
-      // Extract file type from path if not provided
-      if (!fileType || fileType === 'unknown') {
-        const pathParts = path.split('.');
-        if (pathParts.length > 1) {
-          fileType = pathParts[pathParts.length - 1].toLowerCase();
+      // Extract file type from path if not provided or if fileType looks like a path
+      if (!fileType || fileType === 'unknown' || /[\\/]/.test(fileType)) {
+        const match = path.match(/\.([a-zA-Z0-9]+)$/);
+        if (match) {
+          fileType = match[1].toLowerCase();
+        } else {
+          fileType = 'unknown';
         }
       }
 
@@ -197,7 +199,7 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
       const searchUrl = `${webUrl}/_api/search/query?` + 
         `querytext='${encodeURIComponent(query)}*'&` +
         `selectproperties='Title,Path,Author,LastModifiedTime,FileType,SiteName,SPWebUrl,HitHighlightedSummary,FileName,Name,FileLeafRef'&` +
-        `rowlimit=20&` +
+        `rowlimit=10&` +
         `trimduplicates=true`;
 
       const response = await fetch(searchUrl, {
@@ -405,78 +407,80 @@ const MonarchBannerSearch: React.FC<IMonarchBannerSearchProps> = (props) => {
       <div style={bannerStyle} className={styles.bannerSection}>
         <div className={styles.bannerOverlay} />
         <div className={styles.bannerContent}>
-          <div className={styles.brandingSection}>
-            <Text variant="mega" className={styles.bannerHeading} styles={{
-              root: {
-                fontSize: '48px',
-                fontWeight: '700',
-                textShadow: '0 4px 8px rgba(0,0,0,0.4)',
-                letterSpacing: '-1px'
-              }
-            }}>
-              {bannerHeading}
-            </Text>
-          </div>
-          <div className={styles.searchBoxWrapper}>
-            <div className={styles.searchArea} ref={searchBoxRef}>
-              <div className={styles.searchContainer}>
-                <SearchBox
-                  styles={{
-                    root: {
-                      border: 'none !important'
-                    }
-                  }}
-                  placeholder={props.searchboxPrompt}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleKeyDown}
-                  className={styles.enhancedSearchBox}
-                  iconProps={{ iconName: 'Search' }}
-                  value={searchState.query}
-                  autoComplete="off"
-                  aria-label="Search documents"
-                  aria-expanded={searchState.results.length > 0}
-                  aria-activedescendant={searchState.highlightedIndex >= 0 ? `result-${searchState.highlightedIndex}` : undefined}
-                />
-                {(searchState.hasSearched || searchState.isLoading) && (
-                  <div className={styles.searchResultsContainer}>
-                    {searchState.isLoading && (
-                      <div className={styles.dropdownLoading}>
-                        <Spinner size={SpinnerSize.small} />
-                        <Text variant="small">Searching documents...</Text>
-                      </div>
-                    )}
-                    {searchState.error && (
-                      <div className={styles.dropdownError}>
-                        <Icon iconName="ErrorBadge" />
-                        <Text variant="small">{searchState.error}</Text>
-                      </div>
-                    )}
-                    {!searchState.isLoading && !searchState.error && (
-                      <div className={styles.searchResultsList}>
-                        {searchState.hasSearched && displayResults.length === 0 ? (
-                          <div className={styles.professionalNoResults}>
-                            <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
-                            <Text variant="medium" className={styles.noResultsText}>
-                              No documents found for &quot;{searchState.query}&quot;
-                            </Text>
-                            <Text variant="small" className={styles.noResultsSubtext}>
-                              Try adjusting your search terms or check spelling
-                            </Text>
-                          </div>
-                        ) : (
-                          <FocusZone direction={FocusZoneDirection.vertical}>
-                            <List
-                              items={displayResults}
-                              onRenderCell={onRenderCell}
-                              role="listbox"
-                              aria-label="Search results"
-                            />
-                          </FocusZone>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+          <div className={styles.bannerContentInner}>
+            <div className={styles.brandingSection}>
+              <Text variant="mega" className={styles.bannerHeading} styles={{
+                root: {
+                  fontSize: '48px',
+                  fontWeight: '700',
+                  textShadow: '0 4px 8px rgba(0,0,0,0.4)',
+                  letterSpacing: '-1px'
+                }
+              }}>
+                {bannerHeading}
+              </Text>
+            </div>
+            <div className={styles.searchBoxWrapper}>
+              <div className={styles.searchArea} ref={searchBoxRef}>
+                <div className={styles.searchContainer}>
+                  <SearchBox
+                    styles={{
+                      root: {
+                        border: 'none !important'
+                      }
+                    }}
+                    placeholder={props.searchboxPrompt}
+                    onChange={handleSearchChange}
+                    onKeyDown={handleKeyDown}
+                    className={styles.enhancedSearchBox}
+                    iconProps={{ iconName: 'Search' }}
+                    value={searchState.query}
+                    autoComplete="off"
+                    aria-label="Search documents"
+                    aria-expanded={searchState.results.length > 0}
+                    aria-activedescendant={searchState.highlightedIndex >= 0 ? `result-${searchState.highlightedIndex}` : undefined}
+                  />
+                  {(searchState.hasSearched || searchState.isLoading) && (
+                    <div className={styles.searchResultsContainer}>
+                      {searchState.isLoading && (
+                        <div className={styles.dropdownLoading}>
+                          <Spinner size={SpinnerSize.small} />
+                          <Text variant="small">Searching documents...</Text>
+                        </div>
+                      )}
+                      {searchState.error && (
+                        <div className={styles.dropdownError}>
+                          <Icon iconName="ErrorBadge" />
+                          <Text variant="small">{searchState.error}</Text>
+                        </div>
+                      )}
+                      {!searchState.isLoading && !searchState.error && (
+                        <div className={styles.searchResultsList}>
+                          {searchState.hasSearched && displayResults.length === 0 ? (
+                            <div className={styles.professionalNoResults}>
+                              <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
+                              <Text variant="medium" className={styles.noResultsText}>
+                                No documents found for &quot;{searchState.query}&quot;
+                              </Text>
+                              <Text variant="small" className={styles.noResultsSubtext}>
+                                Try adjusting your search terms or check spelling
+                              </Text>
+                            </div>
+                          ) : (
+                            <FocusZone direction={FocusZoneDirection.vertical}>
+                              <List
+                                items={displayResults}
+                                onRenderCell={onRenderCell}
+                                role="listbox"
+                                aria-label="Search results"
+                              />
+                            </FocusZone>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
